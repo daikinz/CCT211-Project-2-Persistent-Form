@@ -1,0 +1,153 @@
+import csv
+import tkinter as tk
+from tkinter import ttk
+
+class AnimeSearch:
+    def __init__(self, parent, tracker):
+        self.parent = parent
+        self.tracker = tracker  # Reference to TVShowTracker instance
+
+        # Create entry widget for user input
+        self.entry = tk.Entry(parent)
+        self.entry.grid(row=1, column=1, padx=10, pady=10)
+
+        # Create label for anime search
+        self.create_search_label()
+
+        # Create listbox widget to display results
+        self.results_box = tk.Listbox(parent, width=50)
+        self.results_box.grid(row=2, column=1, padx=10, pady=10)
+
+        # Bind search function to <KeyRelease> event
+        self.entry.bind("<KeyRelease>", self.search_titles)
+
+        # Bind click event to fill entry with selected title
+        self.results_box.bind("<<ListboxSelect>>", self.fill_entry_with_title)
+
+    def create_search_label(self):
+        # Create label for anime search
+        search_label = tk.Label(self.parent, text="Enter Anime:")
+        search_label.grid(row=1, column=0, padx=10, pady=5, sticky='e')
+
+    def search_titles(self, event=None):
+        search_text = self.entry.get().lower()  # Get the text from the entry and convert to lowercase
+        self.results_box.delete(0, tk.END)  # Clear previous results
+
+        with open('anime-dataset-2023.csv', 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                # Assuming the title column is the second column (index 1)
+                title = row[1]  # Change the index if the title is in a different column
+                if title.lower().startswith(search_text):  # Check if title starts with search_text
+                    self.results_box.insert(tk.END, title)
+
+    def fill_entry_with_title(self, event=None):
+        # Get the selected item from the results box
+        selected_index = self.results_box.curselection()
+        if selected_index:
+            selected_title = self.results_box.get(selected_index)
+            # Fill the entry with the selected title
+            self.entry.delete(0, tk.END)
+            self.entry.insert(tk.END, selected_title)
+
+    def get_selected_title(self):
+        return self.entry.get()
+
+class TVShowTracker:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("TV Show Tracker")
+
+        # Create notebook for tabbed interface
+        self.notebook = ttk.Notebook(root)
+        self.notebook.pack(fill="both", expand=True)
+
+        # Create tabs
+        self.list_tab = ttk.Frame(self.notebook)
+        self.detail_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.list_tab, text='List and History')
+        self.notebook.add(self.detail_tab, text='Anime Details')
+
+        # List and History tab widgets
+        self.category_var = tk.StringVar()
+        self.categories = ["Finished", "Currently Watching", "Dropped", "On Pause", "To Watch"]
+        self.category_dropdown = ttk.Combobox(self.list_tab, textvariable=self.category_var, values=self.categories)
+        self.category_dropdown.grid(row=0, column=0, padx=10, pady=10)
+        self.category_dropdown.current(0)
+
+        self.listbox = tk.Listbox(self.list_tab, width=50, height=20)
+        self.listbox.grid(row=1, column=0, padx=10, pady=10)
+
+        # Anime Details tab widgets
+        self.create_genre_dropdown()
+        self.create_category_dropdown()
+        self.create_score_dropdown()
+        self.create_length_entry()
+        self.create_note_text()
+
+        # Add anime button
+        self.add_button = tk.Button(self.detail_tab, text="Add Anime", command=self.add_anime)
+        self.add_button.grid(row=8, column=1, padx=10, pady=10, sticky="ew")
+
+        # Add anime search to the Anime Details tab
+        self.anime_search = AnimeSearch(self.detail_tab, self)
+
+    def create_genre_dropdown(self):
+        # Anime Details tab widgets
+        genres = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mystery", "Romance", "Sci-Fi", "Sport"]
+        self.genre_var = tk.StringVar()
+        self.genre_dropdown = ttk.Combobox(self.detail_tab, textvariable=self.genre_var, values=genres)
+        self.genre_dropdown.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+        self.genre_dropdown.current(0)
+
+        genre_label = tk.Label(self.detail_tab, text="Genre:")
+        genre_label.grid(row=3, column=0, padx=10, pady=5, sticky='e')
+
+    def create_score_dropdown(self):
+        # Create score dropdown
+        self.score_var = tk.StringVar()
+        self.score_dropdown = ttk.Combobox(self.detail_tab, textvariable=self.score_var, values=[str(i) for i in range(1, 11)])
+        self.score_dropdown.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+        self.score_dropdown.current(0)
+
+        score_label = tk.Label(self.detail_tab, text="Score:")
+        score_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
+
+    def create_length_entry(self):
+        # Create episode length entry
+        self.length_entry = tk.Entry(self.detail_tab)
+        self.length_entry.grid(row=5, column=1, padx=10, pady=5, sticky="ew")
+
+        length_label = tk.Label(self.detail_tab, text="Average Episode Length:")
+        length_label.grid(row=5, column=0, padx=10, pady=5, sticky="e")
+
+    def create_note_text(self):
+        # Create notes text entry
+        self.note_text = tk.Text(self.detail_tab, width=40, height=10)
+        self.note_text.grid(row=6, column=1, padx=10, pady=5, sticky="ew")
+
+        note_label = tk.Label(self.detail_tab, text="Personal Notes:")
+        note_label.grid(row=6, column=0, padx=10, pady=5, sticky="e")
+
+    def create_category_dropdown(self):
+        # Create category dropdown
+        category_label = tk.Label(self.detail_tab, text="Category:")
+        category_label.grid(row=7, column=0, padx=10, pady=5, sticky="e")
+
+        self.category_dropdown_detail = ttk.Combobox(self.detail_tab, textvariable=self.category_var, values=self.categories)
+        self.category_dropdown_detail.grid(row=7, column=1, padx=10, pady=5, sticky="ew")
+        self.category_dropdown_detail.current(0)
+
+    def add_anime(self):
+        selected_title = self.anime_search.get_selected_title()
+        genre = self.genre_var.get()
+        score = self.score_var.get()
+        length = self.length_entry.get()
+        notes = self.note_text.get("1.0", "end-1c")
+        category = self.category_var.get()
+        self.listbox.insert(tk.END, f"Title: {selected_title}, Genre: {genre}, Score: {score}, Length: {length}, Notes: {notes}, Category: {category}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TVShowTracker(root)
+    root.mainloop()
